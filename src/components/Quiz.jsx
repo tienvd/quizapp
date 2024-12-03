@@ -1,64 +1,92 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import "./Quiz.css";
 
 import { data } from "../assets/data";
+
 const Quiz = () => {
-  let [index, setindex] = useState(0);
-  const [question, setquestion] = useState(data[index]);
-  const [lock, setlock] = useState(false);
-  const [score, setscore] = useState(0);
-  const [result, setresult] = useState(false);
+  const [quizData, setQuizData] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [question, setQuestion] = useState(null);
+  const [lock, setLock] = useState(false);
+  const [score, setScore] = useState(0);
+  const [result, setResult] = useState(false);
 
-  let Option1 = useRef(null);
-  let Option2 = useRef(null);
-  let Option3 = useRef(null);
-  let Option4 = useRef(null);
+  const Option1 = useRef(null);
+  const Option2 = useRef(null);
+  const Option3 = useRef(null);
+  const Option4 = useRef(null);
 
-  let option_array = [Option1, Option2, Option3, Option4];
+  const optionArray = [Option1, Option2, Option3, Option4];
+
+  // Hàm trộn mảng
+  const shuffleArray = (array) => {
+    return array
+      .map((item) => ({ ...item, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map((item) => {
+        delete item.sort;
+        return item;
+      });
+  };
+
+  // Trộn dữ liệu khi ứng dụng khởi chạy
+  useEffect(() => {
+    const shuffledData = shuffleArray(data);
+    setQuizData(shuffledData);
+    setQuestion(shuffledData[0]);
+  }, []);
+
   const checkAns = (e, ans) => {
-    if (lock === false) {
+    if (!lock) {
       if (question.ans === ans) {
         e.target.classList.add("correct");
-        setlock(true);
-        setscore((prev) => prev + 1);
+        setLock(true);
+        setScore((prev) => prev + 1);
       } else {
         e.target.classList.add("wrong");
-        setlock(true);
-        option_array[question.ans - 1].current.classList.add("correct");
+        setLock(true);
+        optionArray[question.ans - 1].current.classList.add("correct");
       }
     }
   };
+
   const next = () => {
-    if (lock === true) {
-      if (index === data.length - 1) {
-        setresult(true);
-        return 0;
+    if (lock) {
+      if (index === quizData.length - 1) {
+        setResult(true);
+        return;
       }
-      setindex(++index);
-      setquestion(data[index]);
-      setlock(false);
-      option_array.map((option) => {
+      const nextIndex = index + 1;
+      setIndex(nextIndex);
+      setQuestion(quizData[nextIndex]);
+      setLock(false);
+      optionArray.forEach((option) => {
         option.current.classList.remove("wrong");
         option.current.classList.remove("correct");
-        return null;
       });
     }
   };
-  let reset = () => {
-    setindex(0);
-    setquestion(data[0]);
-    setscore(0);
-    setlock(false);
-    setresult(false);
+
+  const reset = () => {
+    const shuffledData = shuffleArray(data);
+    setQuizData(shuffledData);
+    setQuestion(shuffledData[0]);
+    setIndex(0);
+    setScore(0);
+    setLock(false);
+    setResult(false);
   };
+
+  if (!question) return <div>Loading...</div>;
+
   return (
     <div className="container">
       <h1>Quiz App</h1>
-      <hr></hr>
+      <hr />
       {result ? (
         <>
           <h2>
-            Đúng {score} trên {data.length} câu nha bé
+            Đúng {score} trên {quizData.length} câu nha bé
           </h2>
           <button onClick={reset}>Reset</button>
         </>
@@ -103,7 +131,7 @@ const Quiz = () => {
           </ul>
           <button onClick={next}>Next</button>
           <div className="index">
-            {index + 1} of {data.length}
+            {index + 1} of {quizData.length}
           </div>
         </>
       )}
